@@ -1,0 +1,41 @@
+ul{
+    display:flex;
+    flex-direction: column;  
+    border-radius: 10px;
+li{
+    list-style-type: none;
+    display:flex;
+    flex-direction: row;
+    border:1px black;
+    width:100%;
+    background:#E8E8E8;
+    input{
+        width:16rem;
+        background:teal;
+        border:none;
+        &:focus{
+            background-color:white;
+            outline:none;
+        }
+    } 
+    
+    button{
+        border: none;
+        color:black;
+}
+& button:nth-of-type(2){        
+    margin-left:auto;
+    };
+}
+li:last-of-type{
+    align-items: center;
+    justify-content: center;
+    .newClass{
+        height:100%;
+        svg{
+            height:100%;
+            width:100%;
+        }
+    }
+}
+}

@@ -1,0 +1,12 @@
+.parent{
+    padding:0;
+    margin:0 auto;
+    position: absolute;
+    left:50%;
+    translate:-50% 50%;
+    display:flex;
+    width:40dvw;
+    button{
+        justify-self: start;
+    }
+}
