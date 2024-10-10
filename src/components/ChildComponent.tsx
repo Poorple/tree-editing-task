@@ -27,7 +27,6 @@ const ChildComponent = ({
   const [isOpen, setIsOpen] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  // Update child data when currentInfo changes
   useEffect(() => {
     updateChildData(currentInfo.id, currentInfo);
   }, [currentInfo]);
@@ -151,8 +150,8 @@ const ChildComponent = ({
               />
             </li>
           ))}
-          <li>
-            <button className="newClass" onClick={addNewChild}>
+          <li className="newChildBtn">
+            <button onClick={addNewChild}>
               <CiCirclePlus />
             </button>
           </li>
