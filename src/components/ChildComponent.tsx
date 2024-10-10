@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
-import { ChildComponentProps, ChildInterface } from "../interfaces/Interfaces";
+import {
+  ChildComponentProps,
+  ChildInterface,
+  PATH,
+} from "../interfaces/Interfaces";
 import { FaAngleUp, FaAngleDown } from "react-icons/fa";
 import { CiCirclePlus } from "react-icons/ci";
 import { MdDeleteForever } from "react-icons/md";
-import "../styles/childComponents.scss";
 import EditableInput from "./EditableInput";
+import axios from "axios";
 
 const ChildComponent = ({
   id,
@@ -55,8 +59,14 @@ const ChildComponent = ({
     }));
   };
 
-  const deleteObj = () => {
-    updateChildData(currentInfo.id, null);
+  const deleteObj = async () => {
+    try {
+      await axios.delete(`${PATH}/${currentInfo.id}`);
+      updateChildData(currentInfo.id, null);
+      console.log("Parent info updated successfully");
+    } catch (error) {
+      console.error("Error updating parent info", error);
+    }
   };
 
   const handleUpdateChildData: typeof updateChildData = (
