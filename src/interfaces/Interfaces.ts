@@ -13,5 +13,7 @@ export interface ChildComponentProps extends ChildInterface {
       updatedChild: ChildInterface | null
     ) => void;
     handleDrag: (e: React.DragEvent, index: number) => void; 
-    handleDrop: (e: React.DragEvent, dropIndex: number, hierarchical_level:number) => void;  
+    handleDrop: (e: React.DragEvent, dropIndex: number) => void;  
   }
+
+ export const PATH = "http://localhost:3000/component";
