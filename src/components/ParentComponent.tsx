@@ -188,8 +188,8 @@ const ParentComponent = () => {
                 );
               })
             : null}
-          <li>
-            <button className="newClass" onClick={addNewChild}>
+          <li className="newChildBtn">
+            <button onClick={addNewChild}>
               <CiCirclePlus />
             </button>
           </li>

@@ -168,7 +168,7 @@ const ChildComponent = ({
                 />
               </li>
             ))}
-          <li>
+          <li className="newChildBtn">
             <button className="newClass" onClick={addNewChild}>
               <CiCirclePlus />
             </button>
