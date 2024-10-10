@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { CiCirclePlus } from "react-icons/ci";
 import { FaAngleDown, FaAngleUp } from "react-icons/fa";
-import { ChildInterface } from "../interfaces/Interfaces";
+import { ChildInterface, PATH } from "../interfaces/Interfaces";
 import ChildComponent from "./ChildComponent";
 import EditableInput from "./EditableInput";
+import axios from "axios";
 
 const ParentComponent = () => {
   const [parentInfo, setParentInfo] = useState<ChildInterface>({
@@ -21,11 +22,42 @@ const ParentComponent = () => {
 
   const [isOpen, setIsOpen] = useState(false);
 
-  const [trigger, setTrigger] = useState(false);
-
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  const handleUpdateChildData = (
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(PATH);
+        if (Array.isArray(response.data) && response.data.length > 0) {
+          setParentInfo((prevParentInfo) => ({
+            ...prevParentInfo,
+            childObjs: response.data,
+          }));
+        }
+        console.log(response.data);
+      } catch (err) {
+        console.error("Error fetching data:", err);
+        setError("Failed to load data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  const handleUpdateChildData = async (
     childId: number,
     updatedChild: ChildInterface | null
   ) => {
@@ -39,9 +71,17 @@ const ParentComponent = () => {
       ...prevInfo,
       childObjs: updatedChildren,
     }));
+    try {
+      if (updatedChild) {
+        await axios.put(`${PATH}/${childId}`, updatedChild);
+        console.log("Parent info updated successfully");
+      }
+    } catch (error) {
+      console.error("Error updating parent info", error);
+    }
   };
 
-  const addNewChild = () => {
+  const addNewChild = async () => {
     const newChild: ChildInterface = {
       id: Date.now(),
       title: `child${parentInfo.childObjs.length + 1}`,
@@ -55,52 +95,60 @@ const ParentComponent = () => {
       ...prevChildInfo,
       childObjs: [...prevChildInfo.childObjs, newChild],
     }));
+
+    console.log(newChild);
+    try {
+      await axios.post(`${PATH}`, newChild);
+      console.log("New child added successfully");
+    } catch (error) {
+      console.error("Error adding child", error);
+    }
   };
 
   const handleDrag = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
   };
 
-  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
-    if (draggedIndex === null) return;
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
 
-    if (
-      parentInfo.childObjs[dropIndex].node_id ==
-      parentInfo.childObjs[draggedIndex].node_id
-    ) {
-      const updatedChildren = [...parentInfo.childObjs];
+    const updatedChildren = [...parentInfo.childObjs];
+    const draggedItem = updatedChildren[draggedIndex];
+    const droppedItem = updatedChildren[dropIndex];
 
-      const draggedItem = { ...updatedChildren[draggedIndex] };
+    // Remove the dragged item and insert it at the drop index
+    updatedChildren.splice(draggedIndex, 1);
+    updatedChildren.splice(dropIndex, 0, draggedItem);
 
-      const droppedItem = { ...updatedChildren[dropIndex] };
+    // Update ordering
+    updatedChildren.forEach((child, idx) => {
+      child.ordering = idx;
+    });
+    const temp = draggedItem.childObjs;
+    draggedItem.childObjs = droppedItem.childObjs;
+    droppedItem.childObjs = temp;
 
-      console.log(draggedItem);
-      console.log(droppedItem);
+    updatedChildren.forEach((child, idx) => {
+      child.ordering = idx;
+    });
 
-      const temp = [...draggedItem.childObjs];
+    setParentInfo((prevParentInfo) => ({
+      ...prevParentInfo,
+      childObjs: updatedChildren,
+    }));
 
-      console.log(temp);
+    setDraggedIndex(null);
 
-      draggedItem.childObjs = droppedItem.childObjs;
-      droppedItem.childObjs = temp;
-      updatedChildren[draggedIndex] = droppedItem;
-      updatedChildren[dropIndex] = draggedItem;
-
-      updatedChildren.forEach((child, idx) => (child.ordering = idx));
-
-      setParentInfo({
-        ...parentInfo,
+    try {
+      await axios.put(`${PATH}/${parentInfo.id}`, {
         childObjs: updatedChildren,
       });
-
-      setDraggedIndex(null);
+      console.log("Child reordered successfully");
+    } catch (error) {
+      console.error("Error reordering child", error);
     }
-    setTrigger(!trigger);
   };
-
-  useEffect(() => {
-    trigger == false ? setTrigger(!trigger) : null;
-  }, [trigger]);
 
   return (
     <ul className="parent">
@@ -115,7 +163,7 @@ const ParentComponent = () => {
       </li>
       {isOpen ? (
         <>
-          {parentInfo.childObjs.length > 0 && parentInfo.childObjs && trigger
+          {parentInfo?.childObjs.length > 0 && parentInfo.childObjs
             ? parentInfo.childObjs.map((child, i) => {
                 return (
                   <li
@@ -129,7 +177,7 @@ const ParentComponent = () => {
                       id={child.id}
                       title={child.title}
                       parent_node_id={parentInfo.node_id}
-                      node_id={child.parent_node_id + 1}
+                      node_id={child.node_id}
                       ordering={i}
                       childObjs={child.childObjs}
                       updateChildData={handleUpdateChildData}

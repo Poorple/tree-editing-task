@@ -30,10 +30,13 @@ const ChildComponent = ({
 
   const [trigger, setTrigger] = useState(false);
 
+  useEffect(() => {
+    updateChildData(currentInfo.id, currentInfo);
+  }, [currentInfo]);
+
   function handleDataFromChild(data: string) {
     const updatedInfo = { ...currentInfo, title: data };
     setCurrentInfo(updatedInfo);
-    updateChildData(currentInfo.id, updatedInfo);
   }
 
   const addNewChild = () => {
@@ -46,13 +49,10 @@ const ChildComponent = ({
       childObjs: [],
     };
 
-    const updatedInfo = {
-      ...currentInfo,
-      childObjs: [...currentInfo.childObjs, newChild],
-    };
-
-    setCurrentInfo(updatedInfo);
-    updateChildData(currentInfo.id, updatedInfo);
+    setCurrentInfo((prev) => ({
+      ...prev,
+      childObjs: [...prev.childObjs, newChild],
+    }));
   };
 
   const deleteObj = () => {
@@ -69,10 +69,10 @@ const ChildComponent = ({
         )
       : currentInfo.childObjs.filter((child) => child.id !== childId);
 
-    const updatedInfo = { ...currentInfo, childObjs: updatedChildren };
-
-    setCurrentInfo(updatedInfo);
-    updateChildData(currentInfo.id, updatedInfo);
+    setCurrentInfo((prevInfo) => ({
+      ...prevInfo,
+      childObjs: updatedChildren,
+    }));
   };
 
   const onDragStart = (e: React.DragEvent, index: number) => {
@@ -84,48 +84,31 @@ const ChildComponent = ({
     e.preventDefault();
   };
 
-  const onDrop = (
-    e: React.DragEvent,
-    dropIndex: number,
-    hierarchical_level: number
-  ) => {
-    if (draggedIndex === null) return;
+  const onDrop = (e: React.DragEvent, dropIndex: number) => {
+    if (
+      draggedIndex === null ||
+      dropIndex < 0 ||
+      dropIndex >= currentInfo.childObjs.length
+    )
+      return;
 
-    if (childObjs[dropIndex].node_id == childObjs[draggedIndex].node_id) {
-      const updatedChildren = [...currentInfo.childObjs];
+    const updatedChildren = [...currentInfo.childObjs];
 
-      const draggedItem = { ...updatedChildren[draggedIndex] };
+    if (dropIndex >= updatedChildren.length) return;
 
-      const droppedItem = { ...updatedChildren[dropIndex] };
+    const draggedItem = updatedChildren[draggedIndex];
 
-      console.log(draggedItem);
-      console.log(droppedItem);
+    updatedChildren.splice(draggedIndex, 1);
+    updatedChildren.splice(dropIndex, 0, draggedItem);
 
-      const temp = [...draggedItem.childObjs];
+    updatedChildren.forEach((child, idx) => (child.ordering = idx));
 
-      console.log(temp);
+    setCurrentInfo((prevInfo) => ({
+      ...prevInfo,
+      childObjs: updatedChildren,
+    }));
 
-      draggedItem.childObjs = droppedItem.childObjs;
-      droppedItem.childObjs = temp;
-      updatedChildren[draggedIndex] = droppedItem;
-      updatedChildren[dropIndex] = draggedItem;
-
-      updatedChildren.forEach((child, idx) => (child.ordering = idx));
-
-      setCurrentInfo({
-        ...currentInfo,
-        childObjs: updatedChildren,
-      });
-
-      updateChildData(currentInfo.id, {
-        ...currentInfo,
-        childObjs: updatedChildren,
-      });
-
-      setDraggedIndex(null);
-      handleDrop(e, ordering, hierarchical_level);
-    }
-    setTrigger(!trigger);
+    setDraggedIndex(null);
   };
 
   useEffect(() => {
@@ -138,7 +121,7 @@ const ChildComponent = ({
         draggable
         onDragStart={(e) => onDragStart(e, ordering)}
         onDragOver={onDragOver}
-        onDrop={(e) => onDrop(e, ordering, parent_node_id + 1)}
+        onDrop={(e) => onDrop(e, ordering)}
       >
         <button onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <FaAngleUp /> : <FaAngleDown />}
@@ -151,7 +134,7 @@ const ChildComponent = ({
           <MdDeleteForever />
         </button>
       </li>
-      {isOpen && currentInfo && trigger ? (
+      {isOpen ? (
         <>
           {currentInfo.childObjs.length > 0 &&
             currentInfo.childObjs.map((child, i) => (
@@ -160,7 +143,7 @@ const ChildComponent = ({
                 key={child.id}
                 onDragStart={(e) => onDragStart(e, i)}
                 onDragOver={onDragOver}
-                onDrop={(e) => onDrop(e, i, currentInfo.node_id)}
+                onDrop={(e) => onDrop(e, i)}
               >
                 <ChildComponent
                   id={child.id}
