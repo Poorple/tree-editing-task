@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
-import {
-  ChildComponentProps,
-  ChildInterface,
-  PATH,
-} from "../interfaces/Interfaces";
+import { ChildComponentProps, ChildInterface } from "../interfaces/Interfaces";
 import { FaAngleUp, FaAngleDown } from "react-icons/fa";
 import { CiCirclePlus } from "react-icons/ci";
 import { MdDeleteForever } from "react-icons/md";
 import EditableInput from "./EditableInput";
-import axios from "axios";
 
 const ChildComponent = ({
   id,
@@ -32,8 +27,7 @@ const ChildComponent = ({
   const [isOpen, setIsOpen] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  const [trigger, setTrigger] = useState(false);
-
+  // Update child data when currentInfo changes
   useEffect(() => {
     updateChildData(currentInfo.id, currentInfo);
   }, [currentInfo]);
@@ -59,14 +53,8 @@ const ChildComponent = ({
     }));
   };
 
-  const deleteObj = async () => {
-    try {
-      await axios.delete(`${PATH}/${currentInfo.id}`);
-      updateChildData(currentInfo.id, null);
-      console.log("Parent info updated successfully");
-    } catch (error) {
-      console.error("Error updating parent info", error);
-    }
+  const deleteObj = () => {
+    updateChildData(currentInfo.id, null);
   };
 
   const handleUpdateChildData: typeof updateChildData = (
@@ -104,12 +92,11 @@ const ChildComponent = ({
 
     const updatedChildren = [...currentInfo.childObjs];
 
-    if (dropIndex >= updatedChildren.length) return;
-
     const draggedItem = updatedChildren[draggedIndex];
+    const droppedItem = updatedChildren[dropIndex];
 
-    updatedChildren.splice(draggedIndex, 1);
-    updatedChildren.splice(dropIndex, 0, draggedItem);
+    updatedChildren[draggedIndex] = droppedItem;
+    updatedChildren[dropIndex] = draggedItem;
 
     updatedChildren.forEach((child, idx) => (child.ordering = idx));
 
@@ -119,11 +106,8 @@ const ChildComponent = ({
     }));
 
     setDraggedIndex(null);
+    handleDrop(e, ordering);
   };
-
-  useEffect(() => {
-    trigger == false ? setTrigger(!trigger) : null;
-  }, [trigger]);
 
   return (
     <ul>
@@ -144,37 +128,36 @@ const ChildComponent = ({
           <MdDeleteForever />
         </button>
       </li>
-      {isOpen ? (
+      {isOpen && currentInfo.childObjs && (
         <>
-          {currentInfo.childObjs.length > 0 &&
-            currentInfo.childObjs.map((child, i) => (
-              <li
-                draggable
-                key={child.id}
-                onDragStart={(e) => onDragStart(e, i)}
-                onDragOver={onDragOver}
-                onDrop={(e) => onDrop(e, i)}
-              >
-                <ChildComponent
-                  id={child.id}
-                  title={child.title}
-                  parent_node_id={currentInfo.node_id}
-                  node_id={child.parent_node_id + 1}
-                  childObjs={child.childObjs}
-                  ordering={i}
-                  updateChildData={handleUpdateChildData}
-                  handleDrag={onDragStart}
-                  handleDrop={onDrop}
-                />
-              </li>
-            ))}
-          <li className="newChildBtn">
+          {currentInfo.childObjs.map((child, i) => (
+            <li
+              draggable
+              key={child.id}
+              onDragStart={(e) => onDragStart(e, i)}
+              onDragOver={onDragOver}
+              onDrop={(e) => onDrop(e, i)}
+            >
+              <ChildComponent
+                id={child.id}
+                title={child.title}
+                parent_node_id={currentInfo.node_id}
+                node_id={child.parent_node_id + 1}
+                childObjs={child.childObjs}
+                ordering={i}
+                updateChildData={handleUpdateChildData}
+                handleDrag={onDragStart}
+                handleDrop={onDrop}
+              />
+            </li>
+          ))}
+          <li>
             <button className="newClass" onClick={addNewChild}>
               <CiCirclePlus />
             </button>
           </li>
         </>
-      ) : null}
+      )}
     </ul>
   );
 };

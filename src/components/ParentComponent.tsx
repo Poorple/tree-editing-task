@@ -117,14 +117,9 @@ const ParentComponent = () => {
     const draggedItem = updatedChildren[draggedIndex];
     const droppedItem = updatedChildren[dropIndex];
 
-    // Remove the dragged item and insert it at the drop index
     updatedChildren.splice(draggedIndex, 1);
     updatedChildren.splice(dropIndex, 0, draggedItem);
 
-    // Update ordering
-    updatedChildren.forEach((child, idx) => {
-      child.ordering = idx;
-    });
     const temp = draggedItem.childObjs;
     draggedItem.childObjs = droppedItem.childObjs;
     droppedItem.childObjs = temp;
@@ -139,6 +134,7 @@ const ParentComponent = () => {
     }));
 
     setDraggedIndex(null);
+    console.log(updatedChildren);
 
     try {
       await axios.put(`${PATH}/${parentInfo.id}`, {
